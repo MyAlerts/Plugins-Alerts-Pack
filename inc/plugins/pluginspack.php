@@ -7,7 +7,7 @@
  * @package Plugins Alerts Pack
  * @author  Shade <legend_k@live.it>
  * @license http://opensource.org/licenses/mit-license.php MIT license (same as MyAlerts)
- * @version alpha 0.1
+ * @version β 0.1
  */
  
 if (!defined('IN_MYBB'))
@@ -28,7 +28,7 @@ function pluginspack_info()
 		'website'       =>  'http://www.idevicelab.net/forum',
 		'author'        =>  'Shade',
 		'authorsite'    =>  'http://www.idevicelab.net/forum',
-		'version'       =>  'alpha 0.1',
+		'version'       =>  'β 0.1',
 		'compatibility' =>  '16*',
 		'guid'           =>  'none',
 		);
@@ -68,7 +68,7 @@ function pluginspack_install()
                 array(
                     array('search' => '$db->update_query("threads", $status_update, $where_sql);',
                            'before' => 'global $plugins;
-$args = array("multiple" => &$multiple, "thread_info" => &$thread_info, "status_update" => &$status_update, "thread" => &$thread);
+$args = array("multiple" => &$multiple, "thread_info" => &$thread_info, "status" => &$status, "thread" => &$thread);
 $plugins->run_hooks("mysupport_myalerts", $args);'),
                      ),
                true);
@@ -186,11 +186,31 @@ function pluginspack_parseAlerts(&$alert)
 	{
 		$alert['threadLink'] = get_thread_link($alert['content']['tid']);
 		$status = $alert['content']['status'];
+		// not solved
 		if($status == 0) {
 			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_notsolved, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
 		}
+		// solved
 		elseif($status == 1) {
 			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_solved, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
+		}
+		// solved and closed
+		elseif($status == 3) {
+			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_solvedandclosed, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
+		}
+		// technical
+		if($status == 2 AND !($mybb->settings['mysupporthidetechnical'] == 1 AND !mysupport_usergroup("canmarktechnical"))) {
+			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_technical, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
+		}
+		elseif($status == 2 AND $mybb->settings['mysupporthidetechnical'] == 1) {
+			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_notsolved, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
+		}
+		// not technical
+		if($status == 4 AND !($mybb->settings['mysupporthidetechnical'] == 1 AND !mysupport_usergroup("canmarktechnical"))) {
+			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_nottechnical, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
+		}
+		elseif($status == 4 AND $mybb->settings['mysupporthidetechnical'] == 1) {
+			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_notsolved, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
 		}
 		$alert['rowType'] = 'mysupportAlert';
 	}
@@ -210,14 +230,14 @@ function pluginspack_addAlert_MySupport(&$args)
 	$thread_info = $args['thread_info'];
 	$thread = $args['thread'];
 	$multiple = $args['multiple'];
-	$status_update = $args['status_update'];
+	$status = $args['status'];
 	
 	if($multiple) {
 		foreach ($thread_info as $thread) {
 			$thread = get_thread($thread);
-			if($thread['uid'] != $mybb->user['uid']) {
+			if($thread['uid'] != $mybb->user['uid']) {				
 				$Alerts->addAlert((int) $thread['uid'], 'mysupport', (int) $thread['tid'], (int) $mybb->user['uid'], array(
-					'status'  =>  $status_update['status'],
+					'status'  =>  $status,
 					'tid' => $thread['tid'],
 					'subject' => $thread['subject'],
 					)
@@ -228,7 +248,7 @@ function pluginspack_addAlert_MySupport(&$args)
 	else {
 		if($thread['uid'] != $mybb->user['uid']) {
 			$Alerts->addAlert((int) $thread_info['uid'], 'mysupport', $thread_info['tid'], (int) $mybb->user['uid'], array(
-				'status'  =>  $status_update['status'],
+				'status'  =>  $status,
 				'tid' => $thread_info['tid'],
 				'subject' => $thread_info['subject'],
 				)
