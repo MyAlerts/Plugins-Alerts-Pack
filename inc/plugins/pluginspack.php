@@ -64,12 +64,21 @@ function pluginspack_install()
 	
 	$PL or require_once PLUGINLIBRARY;
 	
+	// MySupport extra hook
 	$PL->edit_core('pluginspack', 'inc/plugins/mysupport.php',
                 array(
                     array('search' => '$db->update_query("threads", $status_update, $where_sql);',
-                           'before' => 'global $plugins;
+                          'before' => 'global $plugins;
 $args = array("multiple" => &$multiple, "thread_info" => &$thread_info, "status" => &$status, "thread" => &$thread);
 $plugins->run_hooks("mysupport_myalerts", $args);'),
+                     ),
+               true);
+	
+	// disable default alert for MyNetwork Profile Comments
+	$PL->edit_core('pluginspack', 'inc/network/profile/datahandlers/comment.php',
+                array(
+                    array('search' => '$this->comment_alert();',
+                          'replace' => ''),
                      ),
                true);
 	
@@ -98,13 +107,24 @@ $plugins->run_hooks("mysupport_myalerts", $args);'),
 		"disporder" => "100",
 		"gid" => $gid,
 	);
+	$pluginspack_settings_2 = array(
+		"name" => "myalerts_alert_myncomments",
+		"title" => $lang->setting_pluginspack_alert_myncomments,
+		"description" => $lang->setting_pluginspack_alert_myncomments_desc,
+		"optionscode" => "yesno",
+		"value" => "1",
+		"disporder" => "101",
+		"gid" => $gid,
+	);
 	
-	$db->insert_query("settings", $pluginspack_settings_1);
+	$db->insert_query("settings", $pluginspack_settings_1);	
+	$db->insert_query("settings", $pluginspack_settings_2);
 	
 	// Set our alerts on for all users by default, maintaining existing alerts values
     // Declare a data array containing all our alerts settings we'd like to add. To default them, the array must be associative and keys must be set to "on" (active) or 0 (not active)
     $possible_settings = array(
             'mysupport' => "on",
+            'myncomments' => "on",
             );
     
     $query = $db->simple_select('users', 'uid, myalerts_settings', '', array());
@@ -143,7 +163,7 @@ function pluginspack_uninstall()
                array(),
                true);
 			   	
-	$db->write_query("DELETE FROM ".TABLE_PREFIX."settings WHERE name IN('myalerts_alert_mysupport')");
+	$db->write_query("DELETE FROM ".TABLE_PREFIX."settings WHERE name IN('myalerts_alert_mysupport','myalerts_alert_myncomments')");
 	
 	$info = pluginspack_info();
     // delete the plugin from cache
@@ -165,7 +185,7 @@ function pluginspack_possibleSettings(&$possible_settings)
 		$lang->load('pluginspack');
 	}
 
-	$_possible_settings = array('mysupport');
+	$_possible_settings = array('mysupport','myncomments');
 
 	$possible_settings = array_merge($possible_settings, $_possible_settings);
 }
@@ -214,6 +234,19 @@ function pluginspack_parseAlerts(&$alert)
 		}
 		$alert['rowType'] = 'mysupportAlert';
 	}
+	// MyNetwork Profile Comments
+	elseif ($alert['alert_type'] == 'myncomments' AND $mybb->user['myalerts_settings']['myncomments'])
+	{
+		$alert['userLink'] = get_profile_link($mybb->user['uid'])."?view=comments";
+		if($alert['content']['newconv']) {
+			$alert['message'] = $lang->sprintf($lang->pluginspack_myncomments_newcomment, $alert['user'], $alert['userLink'], $alert['dateline']);
+		}
+		else {
+			$alert['userLink'] = get_profile_link($alert['content']['user'])."?view=comments";
+			$alert['message'] = $lang->sprintf($lang->pluginspack_myncomments_newreply, $alert['user'], $alert['userLink'], $alert['dateline']);
+		}			
+		$alert['rowType'] = 'myncommentsAlert';
+	}
 }
 
 // Generate the actual alerts
@@ -254,5 +287,38 @@ function pluginspack_addAlert_MySupport(&$args)
 				)
 			);
 		}
+	}
+}
+
+// MYNETWORK PROFILE COMMENTS
+if ($settings['myalerts_enabled'] AND $settings['myalerts_alert_myncomments'])
+{
+	$plugins->add_hook('myn_profile_comments_insert', 'pluginspack_addAlert_MYNComments');
+}
+function pluginspack_addAlert_MYNComments(&$args)
+{
+	global $mybb, $Alerts, $db;
+	
+	$uid = $args[0]->data['uid'];
+	$newconv = $args[0]->data['conv'];
+	
+	if($newconv == 0) {
+		$Alerts->addAlert((int) $uid, 'myncomments', 0, (int) $mybb->user['uid'], array(
+			'newconv' => true
+			)
+		);
+	}
+	else {
+		$conversation = $db->fetch_array($db->simple_select("myn_comments", "aid", "cid = {$newconv}"));
+		if($mybb->user['uid'] != $conversation['aid']) {
+			$Alerts->addAlert((int) $conversation['aid'], 'myncomments', 0, (int) $mybb->user['uid'], array(
+				'user' => $uid
+				)
+			);
+		}
+		$Alerts->addAlert((int) $uid, 'myncomments', 0, (int) $mybb->user['uid'], array(
+			'newconv' => true
+			)
+		);
 	}
 }
