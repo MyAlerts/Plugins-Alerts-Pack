@@ -26,7 +26,7 @@ function pluginspack_info()
 	return array(
 		'name' => 'Plugins Alerts Pack',
 		'description' => 'Provides integration between the most famous plugins and <a href="http://community.mybb.com/thread-127444.html"><b>MyAlerts</b></a>.<br /><span style="color:#f00">MyAlerts is required for Plugins Alerts Pack to work</span>.',
-		'website' => 'http://www.idevicelab.net/forum',
+		'website' => 'https://github.com/Shade-/Plugins-Alerts-Pack',
 		'author' => 'Shade',
 		'authorsite' => 'http://www.idevicelab.net/forum',
 		'version' => 'β 0.4',
