@@ -7,7 +7,7 @@
  * @package Plugins Alerts Pack
  * @author  Shade <legend_k@live.it>
  * @license http://opensource.org/licenses/mit-license.php MIT license (same as MyAlerts)
- * @version β 0.3
+ * @version β 0.4
  */
 
 $mysupport = 'inc/plugins/mysupport.php';
@@ -29,7 +29,7 @@ function pluginspack_info()
 		'website' => 'http://www.idevicelab.net/forum',
 		'author' => 'Shade',
 		'authorsite' => 'http://www.idevicelab.net/forum',
-		'version' => 'β 0.3',
+		'version' => 'β 0.4',
 		'compatibility' => '16*',
 		'guid' => 'none'
 	);
@@ -82,6 +82,19 @@ $plugins->run_hooks("mysupport_myalerts", $args);'
 			)
 		), true);
 	}
+	// core subscription method
+	$PL->edit_core('pluginspack', 'inc/datahandlers/post.php', array(
+		array(
+			'search' => '$emailsubject = $lang->sprintf($emailsubject, $forum[\'name\']);',
+			'before' => '$args = array("subscribedmember" => &$subscribedmember, "thread" => &$thread, "forum" => &$forum, "this" => &$this);
+$plugins->run_hooks("datahandler_subscribedforum_myalerts", $args);'
+		),
+		array(
+			'search' => '$emailsubject = $lang->sprintf($emailsubject, $subject);',
+			'before' => '$args = array("subscribedmember" => &$subscribedmember, "post" => &$post, "subject" => &$subject);
+$plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
+		)
+	), true);
 	
 	$info = pluginspack_info();
 	$shadePlugins = $cache->read('shade_plugins');
@@ -116,31 +129,58 @@ $plugins->run_hooks("mysupport_myalerts", $args);'
 		"disporder" => "101",
 		"gid" => $gid
 	);
+	$pluginspack_settings_3 = array(
+		"name" => "myalerts_alert_subscribedthread",
+		"title" => $lang->setting_pluginspack_alert_subscriptions,
+		"description" => $lang->setting_pluginspack_alert_subscriptions_desc,
+		"optionscode" => "yesno",
+		"value" => "1",
+		"disporder" => "102",
+		"gid" => $gid
+	);
 	
 	$db->insert_query("settings", $pluginspack_settings_1);
 	$db->insert_query("settings", $pluginspack_settings_2);
+	$db->insert_query("settings", $pluginspack_settings_3);
 	
-	// Set our alerts on for all users by default, maintaining existing alerts values
-	// Declare a data array containing all our alerts settings we'd like to add. To default them, the array must be associative and keys must be set to "on" (active) or 0 (not active)
-	$possible_settings = array(
-		'mysupport' => "on",
-		'myncomments' => "on"
+	$insertArray = array(
+		0 => array(
+			'code' => 'mysupport'
+		),
+		1 => array(
+			'code' => 'myncomments'
+		),
+		2 => array(
+			'code' => 'subscribedthread'
+		),
+		3 => array(
+			'code' => 'subscribedforum'
+		)
 	);
 	
-	$query = $db->simple_select('users', 'uid, myalerts_settings', '', array());
+	$db->insert_query_multiple('alert_settings', $insertArray);
 	
-	while ($settings = $db->fetch_array($query)) {
-		// decode existing alerts with corresponding key values. json_decode func returns an associative array by default, we don't need to edit it
-		$alert_settings = json_decode($settings['myalerts_settings']);
-		
-		// merge our settings with existing ones...
-		$my_settings = array_merge($possible_settings, (array) $alert_settings);
-		
-		// and update the table cell, encoding our modified array and paying attention to SQL inj (thanks Nathan!)
-		$db->update_query('users', array(
-			'myalerts_settings' => $db->escape_string(json_encode($my_settings))
-		), 'uid=' . (int) $settings['uid']);
+	$query = $db->simple_select('users', 'uid');
+	while ($uids = $db->fetch_array($query)) {
+		$users[] = $uids['uid'];
 	}
+	
+	$query = $db->simple_select("alert_settings", "id", "code IN ('mysupport', 'myncomments', 'subscribedthread', 'subscribedforum')");
+	while ($setting = $db->fetch_array($query)) {
+		$settings[] = $setting['id'];
+	}
+	
+	foreach ($users as $user) {
+		foreach ($settings as $setting) {
+			$userSettings[] = array(
+				'user_id' => (int) $user,
+				'setting_id' => (int) $setting,
+				'value' => 1
+			);
+		}
+	}
+	
+	$db->insert_query_multiple('alert_setting_values', $userSettings);
 	
 	// rebuild settings
 	rebuild_settings();
@@ -164,8 +204,22 @@ function pluginspack_uninstall()
 	if (file_exists($GLOBALS['mynprofilecomments'])) {
 		$PL->edit_core('pluginspack', $GLOBALS['mynprofilecomments'], array(), true);
 	}
+	$PL->edit_core('pluginspack', 'inc/datahandlers/post.php', array(), true);
 	
-	$db->write_query("DELETE FROM " . TABLE_PREFIX . "settings WHERE name IN('myalerts_alert_mysupport','myalerts_alert_myncomments')");
+	// delete ACP settings
+	$db->write_query("DELETE FROM " . TABLE_PREFIX . "settings WHERE name IN('myalerts_alert_mysupport','myalerts_alert_myncomments','myalerts_alert_subscribedthread','myalerts_alert_subscribedforum')");
+	
+	// delete existing values
+	$query = $db->simple_select("alert_settings", "id", "code IN ('mysupport', 'myncomments', 'subscribedthread', 'subscribedforum')");
+	while ($setting = $db->fetch_array($query)) {
+		$settings[] = $setting['id'];
+	}
+	$settings = implode(",", $settings);
+	
+	// truly delete them
+	$db->delete_query("alert_setting_values", "setting_id IN ({$settings})");
+	// delete UCP settings
+	$db->delete_query("alert_settings", "code IN ('mysupport', 'myncomments', 'subscribedthread', 'subscribedforum')");
 	
 	$info = pluginspack_info();
 	// delete the plugin from cache
@@ -176,22 +230,15 @@ function pluginspack_uninstall()
 	rebuild_settings();
 }
 
-// add alerts into UCP
-$plugins->add_hook('myalerts_possible_settings', 'pluginspack_possibleSettings');
-function pluginspack_possibleSettings(&$possible_settings)
+// load our custom lang file into MyAlerts
+$plugins->add_hook('myalerts_load_lang', 'pluginspack_load_lang');
+function pluginspack_load_lang()
 {
 	global $lang;
 	
 	if (!$lang->pluginspack) {
 		$lang->load('pluginspack');
 	}
-	
-	$_possible_settings = array(
-		'mysupport',
-		'myncomments'
-	);
-	
-	$possible_settings = array_merge($possible_settings, $_possible_settings);
 }
 
 // generate text and stuff like that - fixes #1
@@ -244,6 +291,19 @@ function pluginspack_parseAlerts(&$alert)
 			$alert['message'] = $lang->sprintf($lang->pluginspack_myncomments_newreply, $alert['user'], $alert['userLink'], $alert['dateline']);
 		}
 		$alert['rowType'] = 'myncommentsAlert';
+	}
+	// Subscribed thread
+		elseif ($alert['alert_type'] == 'subscribedthread' AND $mybb->user['myalerts_settings']['subscribedthread']) {
+		$alert['threadLink'] = $mybb->settings['bburl'] . '/' . get_thread_link($alert['content']['tid']);
+		$alert['message'] = $lang->sprintf($lang->pluginspack_subscribedthread_newpost, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
+		$alert['rowType'] = 'subscribedthreadAlert';
+	}
+	// Subscribed Forum
+		elseif ($alert['alert_type'] == 'subscribedforum' AND $mybb->user['myalerts_settings']['subscribedforum']) {
+		$alert['threadLink'] = $mybb->settings['bburl'] . '/' . get_thread_link($alert['content']['tid']);
+		$alert['forumLink'] = $mybb->settings['bburl'] . '/' . get_forum_link($alert['content']['fid']);
+		$alert['message'] = $lang->sprintf($lang->pluginspack_subscribedforum_newthread, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['forumname'], $alert['forumLink']);
+		$alert['rowType'] = 'subscribedforumAlert';
 	}
 }
 
@@ -310,4 +370,38 @@ function pluginspack_addAlert_MYNComments(&$args)
 			'newconv' => true
 		));
 	}
+}
+
+// THREAD SUBSCRIPTION
+if ($settings['myalerts_enabled'] AND $settings['myalerts_alert_subscribedthread']) {
+	$plugins->add_hook('datahandler_subscribedforum_myalerts', 'pluginspack_addAlert_subscribedforum');
+	$plugins->add_hook('datahandler_subscribedthread_myalerts', 'pluginspack_addAlert_subscribedthread');
+}
+function pluginspack_addAlert_subscribedthread(&$args)
+{
+	global $mybb, $Alerts;
+	
+	$uid = $args['subscribedmember']['uid'];
+	$subject = $args['subject'];
+	$tid = $args['post']['tid'];
+	
+	$Alerts->addAlert((int) $uid, 'subscribedthread', (int) $tid, (int) $mybb->user['uid'], array(
+		'subject' => $subject,
+		'tid' => $tid
+	));
+}
+function pluginspack_addAlert_subscribedforum(&$args)
+{
+	global $mybb, $Alerts;
+	
+	$uid = $args['subscribedmember']['uid'];
+	$forumname = $args['forum']['name'];
+	$fid = $args['forum']['fid'];
+	$tid = $args['this']->tid;
+	
+	$Alerts->addAlert((int) $uid, 'subscribedforum', (int) $tid, (int) $mybb->user['uid'], array(
+		'forumname' => $forumname,
+		'tid' => $tid,
+		'fid' => $fid
+	));
 }
