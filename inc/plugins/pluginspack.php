@@ -13,8 +13,8 @@
 $mysupport = 'inc/plugins/mysupport.php';
 $mynprofilecomments = 'inc/network/profile/datahandlers/comment.php';
 
-$use_mysupport = file_exists($mysupport);
-$use_myn = file_exists($mynprofilecomments);
+$use_mysupport = file_exists(MYBB_ROOT . $mysupport);
+$use_myn = file_exists(MYBB_ROOT . $mynprofilecomments);
 
 if (!defined('IN_MYBB')) {
 	die('Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.');
@@ -119,7 +119,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 		"title" => $lang->setting_pluginspack_alert_mysupport,
 		"description" => $lang->setting_pluginspack_alert_mysupport_desc,
 		"optionscode" => "yesno",
-		"value" => $GLOBALS['use_mysupport'], //Detect whether we should us MySupport
+		"value" => (int) $GLOBALS['use_mysupport'], //Detect whether we should us MySupport
 		"disporder" => "100",
 		"gid" => $gid
 	);
@@ -128,7 +128,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 		"title" => $lang->setting_pluginspack_alert_myncomments,
 		"description" => $lang->setting_pluginspack_alert_myncomments_desc,
 		"optionscode" => "yesno",
-		"value" => $GLOBALS['use_myn'],
+		"value" => (int) $GLOBALS['use_myn'],
 		"disporder" => "101",
 		"gid" => $gid
 	);
@@ -187,7 +187,6 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 	
 	// rebuild settings
 	rebuild_settings();
-	
 }
 
 function pluginspack_uninstall()
