@@ -7,11 +7,14 @@
  * @package Plugins Alerts Pack
  * @author  Shade <legend_k@live.it>
  * @license http://opensource.org/licenses/mit-license.php MIT license (same as MyAlerts)
- * @version β 0.4
+ * @version ß 0.4
  */
 
 $mysupport = 'inc/plugins/mysupport.php';
 $mynprofilecomments = 'inc/network/profile/datahandlers/comment.php';
+
+$use_mysupport = file_exists($mysupport);
+$use_myn = file_exists($mynprofilecomments);
 
 if (!defined('IN_MYBB')) {
 	die('Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.');
@@ -29,7 +32,7 @@ function pluginspack_info()
 		'website' => 'https://github.com/Shade-/Plugins-Alerts-Pack',
 		'author' => 'Shade',
 		'authorsite' => 'http://www.idevicelab.net/forum',
-		'version' => 'β 0.4',
+		'version' => 'ß 0.4',
 		'compatibility' => '16*',
 		'guid' => 'none'
 	);
@@ -63,7 +66,7 @@ function pluginspack_install()
 	
 	$PL or require_once PLUGINLIBRARY;
 	
-	if (file_exists($GLOBALS['mysupport'])) {
+	if ($GLOBALS['use_mysupport']) {
 		$PL->edit_core('pluginspack', $GLOBALS['mysupport'], array(
 			array(
 				'search' => '$db->update_query("threads", $status_update, $where_sql);',
@@ -73,7 +76,7 @@ $plugins->run_hooks("mysupport_myalerts", $args);'
 			)
 		), true);
 	}
-	if (file_exists($GLOBALS['mynprofilecomments'])) {
+	if ($GLOBALS['use_myn']) {
 		// disable default alert for MyNetwork Profile Comments
 		$PL->edit_core('pluginspack', $GLOBALS['mynprofilecomments'], array(
 			array(
@@ -116,7 +119,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 		"title" => $lang->setting_pluginspack_alert_mysupport,
 		"description" => $lang->setting_pluginspack_alert_mysupport_desc,
 		"optionscode" => "yesno",
-		"value" => "1",
+		"value" => $GLOBALS['use_mysupport'], //Detect whether we should us MySupport
 		"disporder" => "100",
 		"gid" => $gid
 	);
@@ -125,7 +128,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 		"title" => $lang->setting_pluginspack_alert_myncomments,
 		"description" => $lang->setting_pluginspack_alert_myncomments_desc,
 		"optionscode" => "yesno",
-		"value" => "1",
+		"value" => $GLOBALS['use_myn'],
 		"disporder" => "101",
 		"gid" => $gid
 	);
@@ -198,10 +201,10 @@ function pluginspack_uninstall()
 	
 	$PL or require_once PLUGINLIBRARY;
 	
-	if (file_exists($GLOBALS['mysupport'])) {
+	if ($GLOBALS['use_mysupport']) {
 		$PL->edit_core('pluginspack', $GLOBALS['mysupport'], array(), true);
 	}
-	if (file_exists($GLOBALS['mynprofilecomments'])) {
+	if ($GLOBALS['use_myn']) {
 		$PL->edit_core('pluginspack', $GLOBALS['mynprofilecomments'], array(), true);
 	}
 	$PL->edit_core('pluginspack', 'inc/datahandlers/post.php', array(), true);
@@ -310,7 +313,7 @@ function pluginspack_parseAlerts(&$alert)
 // Generate the actual alerts
 
 // MYSUPPORT
-if ($settings['myalerts_enabled'] AND $settings['myalerts_alert_mysupport']) {
+if ($use_mysupport AND $settings['myalerts_enabled'] AND $settings['myalerts_alert_mysupport']) {
 	$plugins->add_hook('mysupport_myalerts', 'pluginspack_addAlert_MySupport');
 }
 function pluginspack_addAlert_MySupport(&$args)
@@ -345,7 +348,7 @@ function pluginspack_addAlert_MySupport(&$args)
 }
 
 // MYNETWORK PROFILE COMMENTS
-if ($settings['myalerts_enabled'] AND $settings['myalerts_alert_myncomments']) {
+if ($use_myn AND $settings['myalerts_enabled'] AND $settings['myalerts_alert_myncomments']) {
 	$plugins->add_hook('myn_profile_comments_insert', 'pluginspack_addAlert_MYNComments');
 }
 function pluginspack_addAlert_MYNComments(&$args)
