@@ -13,8 +13,8 @@
 $mysupport = 'inc/plugins/mysupport.php';
 $mynprofilecomments = 'inc/network/profile/datahandlers/comment.php';
 
-$use_mysupport = file_exists($mysupport);
-$use_myn = file_exists($mynprofilecomments);
+$use_mysupport = file_exists(MYBB_ROOT . $mysupport);
+$use_myn = file_exists(MYBB_ROOT . $mynprofilecomments);
 
 if (!defined('IN_MYBB')) {
 	die('Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.');
@@ -112,30 +112,30 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 	}
 	
 	$query = $db->simple_select("settinggroups", "gid", "name='myalerts'");
-	$gid = intval($db->fetch_field($query, "gid"));
+	$gid = (int) $db->fetch_field($query, "gid");
 	
 	$pluginspack_settings_1 = array(
 		"name" => "myalerts_alert_mysupport",
-		"title" => $lang->setting_pluginspack_alert_mysupport,
-		"description" => $lang->setting_pluginspack_alert_mysupport_desc,
+		"title" => $lang->setting_myalerts_alert_mysupport,
+		"description" => $lang->setting_myalerts_alert_mysupport_desc,
 		"optionscode" => "yesno",
-		"value" => $GLOBALS['use_mysupport'], //Detect whether we should us MySupport
+		"value" => (int) $GLOBALS['use_mysupport'], //Detect whether we should us MySupport
 		"disporder" => "100",
 		"gid" => $gid
 	);
 	$pluginspack_settings_2 = array(
 		"name" => "myalerts_alert_myncomments",
-		"title" => $lang->setting_pluginspack_alert_myncomments,
-		"description" => $lang->setting_pluginspack_alert_myncomments_desc,
+		"title" => $lang->setting_myalerts_alert_myncomments,
+		"description" => $lang->setting_myalerts_alert_myncomments_desc,
 		"optionscode" => "yesno",
-		"value" => $GLOBALS['use_myn'],
+		"value" => (int) $GLOBALS['use_myn'],
 		"disporder" => "101",
 		"gid" => $gid
 	);
 	$pluginspack_settings_3 = array(
 		"name" => "myalerts_alert_subscribedthread",
-		"title" => $lang->setting_pluginspack_alert_subscriptions,
-		"description" => $lang->setting_pluginspack_alert_subscriptions_desc,
+		"title" => $lang->setting_myalerts_alert_subscribedthread,
+		"description" => $lang->setting_myalerts_alert_subscribedthread_desc,
 		"optionscode" => "yesno",
 		"value" => "1",
 		"disporder" => "102",
@@ -187,7 +187,6 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 	
 	// rebuild settings
 	rebuild_settings();
-	
 }
 
 function pluginspack_uninstall()
@@ -235,6 +234,8 @@ function pluginspack_uninstall()
 
 // load our custom lang file into MyAlerts
 $plugins->add_hook('myalerts_load_lang', 'pluginspack_load_lang');
+//And for our Settingspage
+$plugins->add_hook('admin_config_settings_begin', 'pluginspack_load_lang');
 function pluginspack_load_lang()
 {
 	global $lang;
