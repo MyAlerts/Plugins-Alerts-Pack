@@ -26,7 +26,7 @@ function pluginspack_info()
 	return array(
 		'name' => 'Plugins Alerts Pack',
 		'description' => 'Provides integration between the most famous plugins and <a href="http://community.mybb.com/thread-127444.html"><b>MyAlerts</b></a>.<br /><span style="color:#f00">MyAlerts is required for Plugins Alerts Pack to work</span>.',
-		'website' => 'https://github.com/Shade-/Plugins-Alerts-Pack',
+		'website' => 'https://github.com/MyAlerts/Plugins-Alerts-Pack',
 		'author' => 'Shade',
 		'authorsite' => 'http://www.idevicelab.net/forum',
 		'version' => 'β 0.4',
@@ -68,7 +68,7 @@ function pluginspack_install()
 			array(
 				'search' => '$db->update_query("threads", $status_update, $where_sql);',
 				'before' => 'global $plugins;
-$args = array("multiple" => &$multiple, "thread_info" => &$thread_info, "status" => &$status, "thread" => &$thread);
+$args = array("multiple" => &$multiple, "thread_info" => &$thread_info, "status" => &$status);
 $plugins->run_hooks("mysupport_myalerts", $args);'
 			)
 		), true);
@@ -318,7 +318,6 @@ function pluginspack_addAlert_MySupport(&$args)
 	global $mybb, $Alerts;
 	
 	$thread_info = $args['thread_info'];
-	$thread = $args['thread'];
 	$multiple = $args['multiple'];
 	$status = $args['status'];
 	
@@ -334,7 +333,7 @@ function pluginspack_addAlert_MySupport(&$args)
 			}
 		}
 	} else {
-		if ($thread['uid'] != $mybb->user['uid']) {
+		if ($thread_info['uid'] != $mybb->user['uid']) {
 			$Alerts->addAlert((int) $thread_info['uid'], 'mysupport', (int) $thread_info['tid'], (int) $mybb->user['uid'], array(
 				'status' => $status,
 				'tid' => $thread_info['tid'],
