@@ -116,8 +116,8 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 	
 	$pluginspack_settings_1 = array(
 		"name" => "myalerts_alert_mysupport",
-		"title" => $lang->setting_pluginspack_alert_mysupport,
-		"description" => $lang->setting_pluginspack_alert_mysupport_desc,
+		"title" => $lang->setting_myalerts_alert_mysupport,
+		"description" => $lang->setting_myalerts_alert_mysupport_desc,
 		"optionscode" => "yesno",
 		"value" => (int) $GLOBALS['use_mysupport'], //Detect whether we should us MySupport
 		"disporder" => "100",
@@ -125,8 +125,8 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 	);
 	$pluginspack_settings_2 = array(
 		"name" => "myalerts_alert_myncomments",
-		"title" => $lang->setting_pluginspack_alert_myncomments,
-		"description" => $lang->setting_pluginspack_alert_myncomments_desc,
+		"title" => $lang->setting_myalerts_alert_myncomments,
+		"description" => $lang->setting_myalerts_alert_myncomments_desc,
 		"optionscode" => "yesno",
 		"value" => (int) $GLOBALS['use_myn'],
 		"disporder" => "101",
@@ -134,8 +134,8 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 	);
 	$pluginspack_settings_3 = array(
 		"name" => "myalerts_alert_subscribedthread",
-		"title" => $lang->setting_pluginspack_alert_subscriptions,
-		"description" => $lang->setting_pluginspack_alert_subscriptions_desc,
+		"title" => $lang->setting_myalerts_alert_subscribedthread,
+		"description" => $lang->setting_myalerts_alert_subscribedthread_desc,
 		"optionscode" => "yesno",
 		"value" => "1",
 		"disporder" => "102",
@@ -234,6 +234,8 @@ function pluginspack_uninstall()
 
 // load our custom lang file into MyAlerts
 $plugins->add_hook('myalerts_load_lang', 'pluginspack_load_lang');
+//And for our Settingspage
+$plugins->add_hook('admin_config_settings_begin', 'pluginspack_load_lang');
 function pluginspack_load_lang()
 {
 	global $lang;
