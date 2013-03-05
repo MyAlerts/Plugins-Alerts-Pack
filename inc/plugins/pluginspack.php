@@ -321,6 +321,7 @@ function pluginspack_addAlert_MySupport(&$args)
 	$multiple = $args['multiple'];
 	$status = $args['status'];
 	
+	// multiple threads - marking from forumdisplay
 	if ($multiple) {
 		foreach ($thread_info as $thread) {
 			$thread = get_thread($thread);
@@ -332,7 +333,9 @@ function pluginspack_addAlert_MySupport(&$args)
 				));
 			}
 		}
-	} else {
+	}
+	// single thread, marking from showthread
+	else {
 		if ($thread_info['uid'] != $mybb->user['uid']) {
 			$Alerts->addAlert((int) $thread_info['uid'], 'mysupport', (int) $thread_info['tid'], (int) $mybb->user['uid'], array(
 				'status' => $status,
@@ -354,20 +357,25 @@ function pluginspack_addAlert_MYNComments(&$args)
 	$uid = $args[0]->data['uid'];
 	$newconv = $args[0]->data['conv'];
 	
+	// new conversation, we don't need to check UID since you cannot post directly on your personal wall
 	if ($newconv == 0) {
 		$Alerts->addAlert((int) $uid, 'myncomments', 0, (int) $mybb->user['uid'], array(
 			'newconv' => true
 		));
-	} else {
+	}
+	// new comment in reply to an existing conversation, we need to check UIDs here
+	else {
 		$conversation = $db->fetch_array($db->simple_select("myn_comments", "aid", "cid = {$newconv}"));
 		if ($mybb->user['uid'] != $conversation['aid']) {
 			$Alerts->addAlert((int) $conversation['aid'], 'myncomments', 0, (int) $mybb->user['uid'], array(
 				'user' => $uid
 			));
 		}
-		$Alerts->addAlert((int) $uid, 'myncomments', 0, (int) $mybb->user['uid'], array(
-			'newconv' => true
-		));
+		if($mybb->user['uid'] != $uid) {
+			$Alerts->addAlert((int) $uid, 'myncomments', 0, (int) $mybb->user['uid'], array(
+				'newconv' => true
+			));
+		}
 	}
 }
 
@@ -384,6 +392,7 @@ function pluginspack_addAlert_subscribedthread(&$args)
 	$subject = $args['subject'];
 	$tid = $args['post']['tid'];
 	
+	// no conditions/special things to do??? thanks to the custom hook we have added, this is as simple as alerting directly the user
 	$Alerts->addAlert((int) $uid, 'subscribedthread', (int) $tid, (int) $mybb->user['uid'], array(
 		'subject' => $subject,
 		'tid' => $tid
@@ -398,6 +407,7 @@ function pluginspack_addAlert_subscribedforum(&$args)
 	$fid = $args['forum']['fid'];
 	$tid = $args['this']->tid;
 	
+	// same as above
 	$Alerts->addAlert((int) $uid, 'subscribedforum', (int) $tid, (int) $mybb->user['uid'], array(
 		'forumname' => $forumname,
 		'tid' => $tid,
