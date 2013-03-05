@@ -1,8 +1,8 @@
 Plugins Alerts Pack
 ===============================
 
-> **Current version** ß 0.1  
-> **Dependencies** MyAlerts 1.03 or older, available to download [here][1], and PluginLibrary, which is required to install MyAlerts  
+> **Current version** ß 0.4  
+> **Dependencies** MyAlerts 1.04 or higher, available to download [here][1], and PluginLibrary, which is required to install MyAlerts  
 > **Author** Shade  
 > **Special thanks goes to...** euantor who developed MyAlerts, the best notification plugin ever made for MyBB installations.
 
@@ -18,10 +18,11 @@ If you have any feature request, suggestion, or you want to report any issue, pl
 Main features
 -------------
 
-At the moment, Plugins Alerts Pack comes with **2 additional alerts** bridging MySupport and MyNetwork Profile Comments. You can be notified:
+At the moment, Plugins Alerts Pack comes with **3 additional alerts** bridging MySupport and MyNetwork Profile Comments plus a notification for subscribed threads and Forums. You can be notified:
 
 * When someone marks your threads as solved or not solved, eventually technical or not technical if MySupport setting "Hide technical notices" is set to Off
 * When someone posts a new comment on your wall (aka MYN Profile Comments), or when someone replies to a comment you've made on another user's wall
+* When someone posts a new thread in a subscribed Forum or a new post in a subscribed thread (if setting is set to Instant notification via mail)
 
 Do you want more?
 ----------
