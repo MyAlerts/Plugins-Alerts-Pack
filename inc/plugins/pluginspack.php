@@ -112,7 +112,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 	}
 	
 	$query = $db->simple_select("settinggroups", "gid", "name='myalerts'");
-	$gid = intval($db->fetch_field($query, "gid"));
+	$gid = (int) $db->fetch_field($query, "gid");
 	
 	$pluginspack_settings_1 = array(
 		"name" => "myalerts_alert_mysupport",
