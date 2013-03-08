@@ -10,7 +10,7 @@
  * @version ß 0.4
  */
 
-global $config;
+global $config, $supported_plugins;
 if(!isset($pluginlist))
     $pluginlist = $cache->read("plugins");
 
@@ -25,6 +25,7 @@ $pl_array = array(
 
 //Let's do some nice work with our array
 $supported_plugins = array();
+$hooks = $plugins->hooks;
 foreach($pl_array as $plugin => $file) {
 	$supported_plugins[$plugin] = array(
 		"name" => $plugin,
@@ -46,6 +47,7 @@ foreach($pl_array as $plugin => $file) {
 	if(is_array($pluginlist['active']) && in_array($plugin, $pluginlist['active']))
 		$supported_plugins[$plugin]['activated'] = true;
 }
+$plugins->hooks = $hooks;
 
 if (!defined('IN_MYBB')) {
 	die('Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.');
@@ -53,6 +55,13 @@ if (!defined('IN_MYBB')) {
 
 if (!defined("PLUGINLIBRARY")) {
 	define("PLUGINLIBRARY", MYBB_ROOT . "inc/plugins/pluginlibrary.php");
+}
+
+if(defined("IN_ADMINCP")) {
+	
+	$plugins->add_hook("admin_config_menu", "pluginspack_admin_config_menu");
+	$plugins->add_hook("admin_config_action_handler", "pluginspack_admin_config_action_handler");
+	$plugins->add_hook("admin_config_permissions", "pluginspack_admin_config_permissions");
 }
 
 function pluginspack_info()
@@ -285,6 +294,39 @@ function pluginspack_load_lang()
 	if (!$lang->pluginspack) {
 		$lang->load('pluginspack');
 	}
+}
+
+//Let's include our ACP Page
+function pluginspack_admin_config_menu($sub_menu)
+{
+	global $lang;
+
+	$lang->load("pluginspack");
+
+	$sub_menu[] = array("id" => "pluginspack", "title" => $lang->pluginspack, "link" => "index.php?module=config-pluginspack");
+
+	return $sub_menu;
+}
+
+function pluginspack_admin_config_action_handler($actions)
+{
+	$actions['pluginspack'] = array(
+		"active" => "pluginspack",
+		"file" => "pluginspack.php"
+	);
+
+	return $actions;
+}
+
+function pluginspack_admin_config_permissions($admin_permissions)
+{
+	global $lang;
+
+	$lang->load("pluginspack");
+
+	$admin_permissions['pluginspack'] = $lang->pluginspack_permission;
+
+	return $admin_permissions;
 }
 
 // generate text and stuff like that - fixes #1
