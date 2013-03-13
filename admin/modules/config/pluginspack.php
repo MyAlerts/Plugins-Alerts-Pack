@@ -11,14 +11,14 @@ $page->add_breadcrumb_item($lang->pluginspack, "index.php?module=config-pluginsp
 
 if ($mybb->input['action'] == "modify") {
 	//We have to modify a file
-	if(!isset($mybb->input['plugin']) || !isset($supported_plugins[$mybb->input['plugin']])) {
+	if (!isset($mybb->input['plugin']) || !isset($supported_plugins[$mybb->input['plugin']])) {
 		//Invalid Plugin
 		flash_message($lang->pluginspack_invalid_plugin, 'error');
 		admin_redirect("index.php?module=config-pluginspack");
 	}
 
 	$fix_func = "fix_".$mybb->input['plugin'];
-	if(!function_exists($fix_func)) {
+	if (!function_exists($fix_func)) {
 		//Don't need to be modified
 		flash_message($lang->pluginspack_no_modify, 'error');
 		admin_redirect("index.php?module=config-pluginspack");
@@ -28,9 +28,9 @@ if ($mybb->input['action'] == "modify") {
 	$fix_func();
 	flash_message($lang->pluginspack_modified, 'success');
 	admin_redirect("index.php?module=config-pluginspack");
-} else if ($mybb->input['action'] == "unmodify") {
+} elseif ($mybb->input['action'] == "unmodify") {
 	//We have to unmodify a file
-	if(!isset($mybb->input['plugin']) || !isset($supported_plugins[$mybb->input['plugin']])) {
+	if (!isset($mybb->input['plugin']) || !isset($supported_plugins[$mybb->input['plugin']])) {
 		//Invalid Plugin
 		flash_message($lang->pluginspack_invalid_plugin, 'error');
 		admin_redirect("index.php?module=config-pluginspack");
@@ -46,19 +46,19 @@ if ($mybb->input['action'] == "modify") {
 	$table->construct_header($lang->plugin);
 	$table->construct_header($lang->pluginspack_modify, array("style" => "text-align: center;"));
 
-	foreach($supported_plugins as $plugin) {
-		if($plugin['exists']) {
+	foreach ($supported_plugins as $plugin) {
+		if ($plugin['exists']) {
 			$info_func = "{$plugin['name']}_info";
 			$info = $info_func();
 
 			//Do we have the name in our language package?
-			if(isset($lang->$plugin['name']))
+			if (isset($lang->$plugin['name']))
 			    $name = $lang->$plugin['name'];
 			else
 				$name = $info['name'];
 
 			//Let's get the status of our Plugin
-			if($plugin['needs_install'] && !$plugin['installed']) {
+			if ($plugin['needs_install'] && !$plugin['installed']) {
 				$status = $lang->uninstalled;
 			} else {
 				if($plugin['activated'])
@@ -71,7 +71,7 @@ if ($mybb->input['action'] == "modify") {
 
 			$content = file_get_contents(MYBB_ROOT . $plugin['file']);
 			//Is it already modified?
-			if(strpos($content, "/* + PL:pluginspack + */"))
+			if (strpos($content, "/* + PL:pluginspack + */"))
 				$table->construct_cell("<a href=\"index.php?module=config-pluginspack&action=unmodify&plugin={$plugin['name']}\">".$lang->pluginspack_unmodify."</a>", array("style" => "text-align: center;"));
 			else
 				$table->construct_cell("<a href=\"index.php?module=config-pluginspack&action=modify&plugin={$plugin['name']}\">".$lang->pluginspack_modify."</a>", array("style" => "text-align: center;"));
@@ -79,7 +79,7 @@ if ($mybb->input['action'] == "modify") {
 			$table->construct_row();
 		} else {
 			//Do we have the name in our language package?
-			if(isset($lang->$plugin['name']))
+			if (isset($lang->$plugin['name']))
 			    $name = $lang->$plugin['name'];
 			else
 				$name = $plugin['name'];
@@ -89,7 +89,6 @@ if ($mybb->input['action'] == "modify") {
 			$table->construct_row();
 		}
 	}
-
 	$table->output($lang->pluginspack_supported);
 }
 

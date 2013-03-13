@@ -16,6 +16,7 @@ $l['setting_myalerts_alert_announcement_edit_desc'] = "Do you wish for users to 
 $l['pluginspack_modify'] = "Modify";
 $l['pluginspack_unmodify'] = "Unmodify";
 $l['pluginspack_supported'] = "Supported Plugins";
+$l['plugin'] = "Plugin";
 $l['pluginspack_not_existant'] = "The File that needs to be modified is not where it should be";
 $l['myn_core'] = "MyNetwork ProfileComments";
 $l['mysupport'] = "MySupport";

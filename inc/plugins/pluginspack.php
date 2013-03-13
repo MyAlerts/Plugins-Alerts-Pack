@@ -10,8 +10,16 @@
  * @version ß 0.4
  */
 
+if (!defined('IN_MYBB')) {
+	die('Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.');
+}
+
+if (!defined("PLUGINLIBRARY")) {
+	define("PLUGINLIBRARY", MYBB_ROOT . "inc/plugins/pluginlibrary.php");
+}
+
 global $config, $supported_plugins;
-if(!isset($pluginlist))
+if (!isset($pluginlist))
     $pluginlist = $cache->read("plugins");
 
 $pl_array = array(
@@ -26,7 +34,7 @@ $pl_array = array(
 //Let's do some nice work with our array
 $supported_plugins = array();
 $hooks = $plugins->hooks;
-foreach($pl_array as $plugin => $file) {
+foreach ($pl_array as $plugin => $file) {
 	$supported_plugins[$plugin] = array(
 		"name" => $plugin,
 		"file" => $file,
@@ -39,25 +47,17 @@ foreach($pl_array as $plugin => $file) {
 	@include_once MYBB_ROOT . "inc/plugins/{$plugin}.php";
 
 	$installed_func = "{$plugin}_is_installed";
-	if(function_exists($installed_func)) {
+	if (function_exists($installed_func)) {
 		$supported_plugins[$plugin]['needs_install'] = true;
 		$supported_plugins[$plugin]['installed'] = $installed_func();
 	}
 	
-	if(is_array($pluginlist['active']) && in_array($plugin, $pluginlist['active']))
+	if (is_array($pluginlist['active']) && in_array($plugin, $pluginlist['active']))
 		$supported_plugins[$plugin]['activated'] = true;
 }
 $plugins->hooks = $hooks;
 
-if (!defined('IN_MYBB')) {
-	die('Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.');
-}
-
-if (!defined("PLUGINLIBRARY")) {
-	define("PLUGINLIBRARY", MYBB_ROOT . "inc/plugins/pluginlibrary.php");
-}
-
-if(defined("IN_ADMINCP")) {
+if (defined("IN_ADMINCP")) {
 	
 	$plugins->add_hook("admin_config_menu", "pluginspack_admin_config_menu");
 	$plugins->add_hook("admin_config_action_handler", "pluginspack_admin_config_action_handler");
@@ -106,12 +106,6 @@ function pluginspack_install()
 	
 	$PL or require_once PLUGINLIBRARY;
 	
-	/*if ($GLOBALS['use_mysupport']) {
-	}
-	if ($GLOBALS['use_myn']) {
-	}
-	if ($GLOBALS['use_announcement']) {
-	}*/
 	// core subscription method
 	$PL->edit_core('pluginspack', 'inc/datahandlers/post.php', array(
 		array(
@@ -253,8 +247,8 @@ function pluginspack_uninstall()
 	
 	$PL or require_once PLUGINLIBRARY;
 	
-	foreach($supported_plugins as $plugin) {
-		if($plugin['exists'])
+	foreach ($supported_plugins as $plugin) {
+		if ($plugin['exists'])
 		    $PL->edit_core('pluginspack', $plugin['file'], array(), true);
 	}
 	$PL->edit_core('pluginspack', 'inc/datahandlers/post.php', array(), true);
