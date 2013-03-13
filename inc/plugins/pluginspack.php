@@ -587,7 +587,7 @@ function pluginspack_addAlert_subscribedforum(&$args)
 //Replace functions
 function fix_mysupport() {
 	global $supported_plugins, $PL;
-	$PL->edit_core('pluginspack', $supported_plugins['mysupport']['file'], array(
+	return $PL->edit_core('pluginspack', $supported_plugins['mysupport']['file'], array(
 		array(
 			'search' => '$db->update_query("threads", $status_update, $where_sql);',
 			'before' => 'global $plugins;
@@ -600,7 +600,7 @@ $plugins->run_hooks("mysupport_myalerts", $args);'
 function fix_myn_core() {
 	global $supported_plugins, $PL;
 	// disable default alert for MyNetwork Profile Comments
-	$PL->edit_core('pluginspack', $supported_plugins['myn_core']['file'], array(
+	return $PL->edit_core('pluginspack', $supported_plugins['myn_core']['file'], array(
 		array(
 			'search' => '$this->comment_alert();',
 			'replace' => ''
@@ -610,7 +610,7 @@ function fix_myn_core() {
 
 function fix_announcement() {
 	global $supported_plugins, $PL;
-	$PL->edit_core('pluginspack', $supported_plugins['announcement']['file'], array(
+	return $PL->edit_core('pluginspack', $supported_plugins['announcement']['file'], array(
 		//Run our Hook on adding
 		array(
 			'search' => '$db->insert_query("announcement", $insert);',

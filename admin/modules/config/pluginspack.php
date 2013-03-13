@@ -25,7 +25,13 @@ if ($mybb->input['action'] == "modify") {
 	}
 
 	//Let's do it
-	$fix_func();
+	$result = $fix_func();
+	
+	if ($result === false) {
+		flash_message($lang->pluginspack_chmod, 'error');
+		admin_redirect("index.php?module=config-pluginspack");
+	}
+	
 	flash_message($lang->pluginspack_modified, 'success');
 	admin_redirect("index.php?module=config-pluginspack");
 } elseif ($mybb->input['action'] == "unmodify") {
@@ -36,7 +42,13 @@ if ($mybb->input['action'] == "modify") {
 		admin_redirect("index.php?module=config-pluginspack");
 	}
 
-	$PL->edit_core('pluginspack', $supported_plugins[$mybb->input['plugin']]['file'], array(), true);
+	$result = $PL->edit_core('pluginspack', $supported_plugins[$mybb->input['plugin']]['file'], array(), true);
+
+	if ($result === false) {
+		flash_message($lang->pluginspack_chmod, 'error');
+		admin_redirect("index.php?module=config-pluginspack");
+	}
+
 	flash_message($lang->pluginspack_unmodified, 'success');
 	admin_redirect("index.php?module=config-pluginspack");
 } else {

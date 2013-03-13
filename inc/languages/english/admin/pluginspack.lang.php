@@ -13,6 +13,7 @@ $l['setting_myalerts_alert_announcement_add_desc'] = "Do you wish for users to r
 $l['setting_myalerts_alert_announcement_edit'] = "Alert on edited Announcements?";
 $l['setting_myalerts_alert_announcement_edit_desc'] = "Do you wish for users to receive a new alert when an admin edits an Announcement?";
 
+$l['pluginspack_chmod'] = "Couldn't modify file. Are you sure you set the right chmod (777)?";
 $l['pluginspack_modify'] = "Modify";
 $l['pluginspack_unmodify'] = "Unmodify";
 $l['pluginspack_supported'] = "Supported Plugins";
