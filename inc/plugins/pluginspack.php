@@ -10,21 +10,58 @@
  * @version ß 0.4
  */
 
-global $config;
-$mysupport = 'inc/plugins/mysupport.php';
-$mynprofilecomments = 'inc/network/profile/datahandlers/comment.php';
-$announcement = $config['admin_dir'].'/modules/config/announcement.php';
-
-$use_mysupport = file_exists(MYBB_ROOT . $mysupport);
-$use_myn = file_exists(MYBB_ROOT . $mynprofilecomments);
-$use_announcement = file_exists(MYBB_ROOT . $announcement);
-
 if (!defined('IN_MYBB')) {
 	die('Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.');
 }
 
 if (!defined("PLUGINLIBRARY")) {
 	define("PLUGINLIBRARY", MYBB_ROOT . "inc/plugins/pluginlibrary.php");
+}
+
+global $config, $supported_plugins;
+if (!isset($pluginlist))
+    $pluginlist = $cache->read("plugins");
+
+$pl_array = array(
+	//Usage: pluginname => file,
+	//Example: "pluginspack" => "inc/plugins/pluginspack.php",
+	"mysupport" => "inc/plugins/mysupport.php",
+	"announcement" => $config['admin_dir']."/modules/config/announcement.php",
+	//Little workaround for MyNetwork as the ProfileComment isn't an own plugin
+	"myn_core" => "inc/network/profile/datahandlers/comment.php"
+);
+
+//Let's do some nice work with our array
+$supported_plugins = array();
+$hooks = $plugins->hooks;
+foreach ($pl_array as $plugin => $file) {
+	$supported_plugins[$plugin] = array(
+		"name" => $plugin,
+		"file" => $file,
+		"exists" => file_exists(MYBB_ROOT . $file),
+		"needs_install" => false,
+		"installed" => false,
+		"activated" => false
+	);
+
+	@include_once MYBB_ROOT . "inc/plugins/{$plugin}.php";
+
+	$installed_func = "{$plugin}_is_installed";
+	if (function_exists($installed_func)) {
+		$supported_plugins[$plugin]['needs_install'] = true;
+		$supported_plugins[$plugin]['installed'] = $installed_func();
+	}
+	
+	if (is_array($pluginlist['active']) && in_array($plugin, $pluginlist['active']))
+		$supported_plugins[$plugin]['activated'] = true;
+}
+$plugins->hooks = $hooks;
+
+if (defined("IN_ADMINCP")) {
+	
+	$plugins->add_hook("admin_config_menu", "pluginspack_admin_config_menu");
+	$plugins->add_hook("admin_config_action_handler", "pluginspack_admin_config_action_handler");
+	$plugins->add_hook("admin_config_permissions", "pluginspack_admin_config_permissions");
 }
 
 function pluginspack_info()
@@ -69,44 +106,6 @@ function pluginspack_install()
 	
 	$PL or require_once PLUGINLIBRARY;
 	
-	if ($GLOBALS['use_mysupport']) {
-		$PL->edit_core('pluginspack', $GLOBALS['mysupport'], array(
-			array(
-				'search' => '$db->update_query("threads", $status_update, $where_sql);',
-				'before' => 'global $plugins;
-$args = array("multiple" => &$multiple, "thread_info" => &$thread_info, "status" => &$status);
-$plugins->run_hooks("mysupport_myalerts", $args);'
-			)
-		), true);
-	}
-	if ($GLOBALS['use_myn']) {
-		// disable default alert for MyNetwork Profile Comments
-		$PL->edit_core('pluginspack', $GLOBALS['mynprofilecomments'], array(
-			array(
-				'search' => '$this->comment_alert();',
-				'replace' => ''
-			)
-		), true);
-	}
-	if ($GLOBALS['use_announcement']) {
-		$PL->edit_core('pluginspack', $GLOBALS['announcement'], array(
-			//Run our Hook on adding
-			array(
-				'search' => '$db->insert_query("announcement", $insert);',
-				'after' => '$plugins->run_hooks("announcement_fire");'
-			),
-			//On enabling
-			array(
-				'search' => '$db->update_query("announcement", array("Enabled"=>$enabled), "ID=\'{$aid}\'");',
-				'after' => '\n$plugins->run_hooks("announcement_fire");'
-			),
-			//And on editing
-			array(
-				'search' => '$db->update_query("announcement", $update, "ID=\'{$aid}\'");',
-				'after' => '$plugins->run_hooks("announcement_fire");'
-			)
-		), true);
-	}
 	// core subscription method
 	$PL->edit_core('pluginspack', 'inc/datahandlers/post.php', array(
 		array(
@@ -141,7 +140,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 		"title" => $lang->setting_myalerts_alert_mysupport,
 		"description" => $lang->setting_myalerts_alert_mysupport_desc,
 		"optionscode" => "yesno",
-		"value" => (int) $GLOBALS['use_mysupport'], //Detect whether we should us MySupport
+		"value" => (int) $supported_plugins['mysupport']['activated'], //Detect whether we should us MySupport
 		"disporder" => "100",
 		"gid" => $gid
 	);
@@ -150,7 +149,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 		"title" => $lang->setting_myalerts_alert_myncomments,
 		"description" => $lang->setting_myalerts_alert_myncomments_desc,
 		"optionscode" => "yesno",
-		"value" => (int) $GLOBALS['use_myn'],
+		"value" => (int) $supported_plugins['myn_core']['activated'],
 		"disporder" => "101",
 		"gid" => $gid
 	);
@@ -168,7 +167,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 		"title" => $lang->setting_myalerts_alert_announcement_add,
 		"description" => $lang->setting_myalerts_alert_announcement_add_desc,
 		"optionscode" => "yesno",
-		"value" => (int) $GLOBALS['use_announcement'],
+		"value" => (int) $supported_plugins['announcement']['activated'],
 		"disporder" => "103",
 		"gid" => $gid
 	);
@@ -177,7 +176,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 		"title" => $lang->setting_myalerts_alert_announcement_edit,
 		"description" => $lang->setting_myalerts_alert_announcement_edit_desc,
 		"optionscode" => "yesno",
-		"value" => (int) $GLOBALS['use_announcement'],
+		"value" => (int) $supported_plugins['announcement']['activated'],
 		"disporder" => "104",
 		"gid" => $gid
 	);
@@ -239,7 +238,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 
 function pluginspack_uninstall()
 {
-	global $db, $cache, $PL;
+	global $db, $cache, $PL, $supported_plugins;
 	
 	if (!file_exists(PLUGINLIBRARY)) {
 		flash_message("The selected plugin could not be uninstalled because <a href=\"http://mods.mybb.com/view/pluginlibrary\">PluginLibrary</a> is missing.", "error");
@@ -248,14 +247,9 @@ function pluginspack_uninstall()
 	
 	$PL or require_once PLUGINLIBRARY;
 	
-	if ($GLOBALS['use_mysupport']) {
-		$PL->edit_core('pluginspack', $GLOBALS['mysupport'], array(), true);
-	}
-	if ($GLOBALS['use_myn']) {
-		$PL->edit_core('pluginspack', $GLOBALS['mynprofilecomments'], array(), true);
-	}
-	if ($GLOBALS['use_announcement']) {
-		$PL->edit_core('pluginspack', $GLOBALS['announcement'], array(), true);
+	foreach ($supported_plugins as $plugin) {
+		if ($plugin['exists'])
+		    $PL->edit_core('pluginspack', $plugin['file'], array(), true);
 	}
 	$PL->edit_core('pluginspack', 'inc/datahandlers/post.php', array(), true);
 	
@@ -294,6 +288,39 @@ function pluginspack_load_lang()
 	if (!$lang->pluginspack) {
 		$lang->load('pluginspack');
 	}
+}
+
+//Let's include our ACP Page
+function pluginspack_admin_config_menu($sub_menu)
+{
+	global $lang;
+
+	$lang->load("pluginspack");
+
+	$sub_menu[] = array("id" => "pluginspack", "title" => $lang->pluginspack, "link" => "index.php?module=config-pluginspack");
+
+	return $sub_menu;
+}
+
+function pluginspack_admin_config_action_handler($actions)
+{
+	$actions['pluginspack'] = array(
+		"active" => "pluginspack",
+		"file" => "pluginspack.php"
+	);
+
+	return $actions;
+}
+
+function pluginspack_admin_config_permissions($admin_permissions)
+{
+	global $lang;
+
+	$lang->load("pluginspack");
+
+	$admin_permissions['pluginspack'] = $lang->pluginspack_permission;
+
+	return $admin_permissions;
 }
 
 // generate text and stuff like that - fixes #1
@@ -377,7 +404,7 @@ function pluginspack_parseAlerts(&$alert)
 // Generate the actual alerts
 
 // MYSUPPORT
-if ($use_mysupport AND $settings['myalerts_enabled'] AND $settings['myalerts_alert_mysupport']) {
+if ($supported_plugins['mysupport']['exists'] AND $settings['myalerts_enabled'] AND $settings['myalerts_alert_mysupport']) {
 	$plugins->add_hook('mysupport_myalerts', 'pluginspack_addAlert_MySupport');
 }
 function pluginspack_addAlert_MySupport(&$args)
@@ -414,7 +441,7 @@ function pluginspack_addAlert_MySupport(&$args)
 }
 
 // MYNETWORK PROFILE COMMENTS
-if ($use_myn AND $settings['myalerts_enabled'] AND $settings['myalerts_alert_myncomments']) {
+if ($supported_plugins['myn_core']['exists'] AND $settings['myalerts_enabled'] AND $settings['myalerts_alert_myncomments']) {
 	$plugins->add_hook('myn_profile_comments_insert', 'pluginspack_addAlert_MYNComments');
 }
 function pluginspack_addAlert_MYNComments(&$args)
@@ -447,7 +474,7 @@ function pluginspack_addAlert_MYNComments(&$args)
 }
 
 // ANNOUNCEMENT
-if ($use_announcement AND $settings['myalerts_enabled'] AND ($settings['myalerts_alert_announcement_add'] OR $settings['myalerts_alert_announcement_edit'])) {
+if ($supported_plugins['announcement']['exists'] AND $settings['myalerts_enabled'] AND ($settings['myalerts_alert_announcement_add'] OR $settings['myalerts_alert_announcement_edit'])) {
 	$plugins->add_hook('announcement_fire', 'pluginspack_addAlert_Announcement');
 }
 function pluginspack_addAlert_Announcement()
@@ -553,4 +580,51 @@ function pluginspack_addAlert_subscribedforum(&$args)
 		'tid' => $tid,
 		'fid' => $fid
 	));
+}
+
+
+
+//Replace functions
+function fix_mysupport() {
+	global $supported_plugins, $PL;
+	return $PL->edit_core('pluginspack', $supported_plugins['mysupport']['file'], array(
+		array(
+			'search' => '$db->update_query("threads", $status_update, $where_sql);',
+			'before' => 'global $plugins;
+$args = array("multiple" => &$multiple, "thread_info" => &$thread_info, "status" => &$status);
+$plugins->run_hooks("mysupport_myalerts", $args);'
+		)
+	), true);
+}
+
+function fix_myn_core() {
+	global $supported_plugins, $PL;
+	// disable default alert for MyNetwork Profile Comments
+	return $PL->edit_core('pluginspack', $supported_plugins['myn_core']['file'], array(
+		array(
+			'search' => '$this->comment_alert();',
+			'replace' => ''
+		)
+	), true);
+}
+
+function fix_announcement() {
+	global $supported_plugins, $PL;
+	return $PL->edit_core('pluginspack', $supported_plugins['announcement']['file'], array(
+		//Run our Hook on adding
+		array(
+			'search' => '$db->insert_query("announcement", $insert);',
+			'after' => '$plugins->run_hooks("announcement_fire");'
+		),
+		//On enabling
+		array(
+			'search' => '$db->update_query("announcement", array("Enabled"=>$enabled), "ID=\'{$aid}\'");',
+			'after' => '\n$plugins->run_hooks("announcement_fire");'
+		),
+		//And on editing
+		array(
+			'search' => '$db->update_query("announcement", $update, "ID=\'{$aid}\'");',
+			'after' => '$plugins->run_hooks("announcement_fire");'
+		)
+	), true);
 }
