@@ -7,7 +7,7 @@
  * @package Plugins Alerts Pack
  * @author  Shade <legend_k@live.it>
  * @license http://opensource.org/licenses/mit-license.php MIT license (same as MyAlerts)
- * @version ß 0.4
+ * @version 1.0
  */
 
 if (!defined('IN_MYBB')) {
@@ -72,7 +72,7 @@ function pluginspack_info()
 		'website' => 'https://github.com/MyAlerts/Plugins-Alerts-Pack',
 		'author' => 'Shade',
 		'authorsite' => 'http://www.idevicelab.net/forum',
-		'version' => 'ß 0.4',
+		'version' => '1.0',
 		'compatibility' => '16*',
 		'guid' => 'none'
 	);
@@ -163,21 +163,30 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 		"gid" => $gid
 	);
 	$pluginspack_settings_4 = array(
+		"name" => "myalerts_alert_subscribedforum",
+		"title" => $lang->setting_myalerts_alert_subscribedforum,
+		"description" => $lang->setting_myalerts_alert_subscribedforum_desc,
+		"optionscode" => "yesno",
+		"value" => "1",
+		"disporder" => "103",
+		"gid" => $gid
+	);
+	$pluginspack_settings_5 = array(
 		"name" => "myalerts_alert_announcement_add",
 		"title" => $lang->setting_myalerts_alert_announcement_add,
 		"description" => $lang->setting_myalerts_alert_announcement_add_desc,
 		"optionscode" => "yesno",
 		"value" => (int) $supported_plugins['announcement']['activated'],
-		"disporder" => "103",
+		"disporder" => "104",
 		"gid" => $gid
 	);
-	$pluginspack_settings_5 = array(
+	$pluginspack_settings_6 = array(
 		"name" => "myalerts_alert_announcement_edit",
 		"title" => $lang->setting_myalerts_alert_announcement_edit,
 		"description" => $lang->setting_myalerts_alert_announcement_edit_desc,
 		"optionscode" => "yesno",
 		"value" => (int) $supported_plugins['announcement']['activated'],
-		"disporder" => "104",
+		"disporder" => "105",
 		"gid" => $gid
 	);
 	
@@ -186,6 +195,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 	$db->insert_query("settings", $pluginspack_settings_3);
 	$db->insert_query("settings", $pluginspack_settings_4);
 	$db->insert_query("settings", $pluginspack_settings_5);
+	$db->insert_query("settings", $pluginspack_settings_6);
 	
 	$insertArray = array(
 		0 => array(
