@@ -10,6 +10,7 @@
  * @version 1.0
  */
 
+
 if (!defined('IN_MYBB')) {
 	die('Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.');
 }
@@ -23,11 +24,11 @@ if (!isset($pluginlist))
     $pluginlist = $cache->read("plugins");
 
 $pl_array = array(
-	//Usage: pluginname => file,
-	//Example: "pluginspack" => "inc/plugins/pluginspack.php",
+	// Usage: pluginname => file,
+	// Example: "pluginspack" => "inc/plugins/pluginspack.php",
 	"mysupport" => "inc/plugins/mysupport.php",
 	"announcement" => $config['admin_dir']."/modules/config/announcement.php",
-	//Little workaround for MyNetwork as the ProfileComment isn't an own plugin
+	// Little workaround for MyNetwork as the ProfileComment isn't an own plugin
 	"myn_core" => "inc/network/profile/datahandlers/comment.php"
 );
 
@@ -98,7 +99,7 @@ function pluginspack_install()
 		admin_redirect("index.php?module=config-plugins");
 	}
 	
-	// check if myalerts table exist - if false, then MyAlerts is not installed, warn the user and redirect him
+	// Check if myalerts table exist - if false, then MyAlerts is not installed, warn the user and redirect him
 	if (!$db->table_exists('alerts')) {
 		flash_message("The selected plugin could not be installed because <a href=\"http://mods.mybb.com/view/myalerts\">MyAlerts</a> is not installed. Moderation Alerts Pack requires MyAlerts to be installed in order to properly work.", "error");
 		admin_redirect("index.php?module=config-plugins");
@@ -106,7 +107,7 @@ function pluginspack_install()
 	
 	$PL or require_once PLUGINLIBRARY;
 	
-	// core subscription method
+	// Core subscription method
 	$PL->edit_core('pluginspack', 'inc/datahandlers/post.php', array(
 		array(
 			'search' => '$emailsubject = $lang->sprintf($emailsubject, $forum[\'name\']);',
@@ -120,6 +121,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 		)
 	), true);
 	
+	// Add plugin details to the cache
 	$info = pluginspack_info();
 	$shadePlugins = $cache->read('shade_plugins');
 	$shadePlugins[$info['name']] = array(
@@ -135,67 +137,70 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 	$query = $db->simple_select("settinggroups", "gid", "name='myalerts'");
 	$gid = (int) $db->fetch_field($query, "gid");
 	
-	$pluginspack_settings_1 = array(
+	$settings = array();
+
+	$settings[] = array(
 		"name" => "myalerts_alert_mysupport",
 		"title" => $lang->setting_myalerts_alert_mysupport,
 		"description" => $lang->setting_myalerts_alert_mysupport_desc,
 		"optionscode" => "yesno",
-		"value" => (int) $supported_plugins['mysupport']['activated'], //Detect whether we should us MySupport
-		"disporder" => "100",
-		"gid" => $gid
+		"value" => (int) $supported_plugins['mysupport']['activated'] //Detect whether we should us MySupport
 	);
-	$pluginspack_settings_2 = array(
+	$settings[] = array(
 		"name" => "myalerts_alert_myncomments",
 		"title" => $lang->setting_myalerts_alert_myncomments,
 		"description" => $lang->setting_myalerts_alert_myncomments_desc,
 		"optionscode" => "yesno",
-		"value" => (int) $supported_plugins['myn_core']['activated'],
-		"disporder" => "101",
-		"gid" => $gid
+		"value" => (int) $supported_plugins['myn_core']['activated']
 	);
-	$pluginspack_settings_3 = array(
+	$settings[] = array(
 		"name" => "myalerts_alert_subscribedthread",
 		"title" => $lang->setting_myalerts_alert_subscribedthread,
 		"description" => $lang->setting_myalerts_alert_subscribedthread_desc,
 		"optionscode" => "yesno",
-		"value" => "1",
-		"disporder" => "102",
-		"gid" => $gid
+		"value" => "1"
 	);
-	$pluginspack_settings_4 = array(
+	$settings[] = array(
 		"name" => "myalerts_alert_subscribedforum",
 		"title" => $lang->setting_myalerts_alert_subscribedforum,
 		"description" => $lang->setting_myalerts_alert_subscribedforum_desc,
 		"optionscode" => "yesno",
-		"value" => "1",
-		"disporder" => "103",
-		"gid" => $gid
+		"value" => "1"
 	);
-	$pluginspack_settings_5 = array(
+	$settings[] = array(
 		"name" => "myalerts_alert_announcement_add",
 		"title" => $lang->setting_myalerts_alert_announcement_add,
 		"description" => $lang->setting_myalerts_alert_announcement_add_desc,
 		"optionscode" => "yesno",
-		"value" => (int) $supported_plugins['announcement']['activated'],
-		"disporder" => "104",
-		"gid" => $gid
+		"value" => (int) $supported_plugins['announcement']['activated']
 	);
-	$pluginspack_settings_6 = array(
+	$settings[] = array(
 		"name" => "myalerts_alert_announcement_edit",
 		"title" => $lang->setting_myalerts_alert_announcement_edit,
 		"description" => $lang->setting_myalerts_alert_announcement_edit_desc,
 		"optionscode" => "yesno",
-		"value" => (int) $supported_plugins['announcement']['activated'],
-		"disporder" => "105",
-		"gid" => $gid
+		"value" => (int) $supported_plugins['announcement']['activated']
 	);
 	
-	$db->insert_query("settings", $pluginspack_settings_1);
-	$db->insert_query("settings", $pluginspack_settings_2);
-	$db->insert_query("settings", $pluginspack_settings_3);
-	$db->insert_query("settings", $pluginspack_settings_4);
-	$db->insert_query("settings", $pluginspack_settings_5);
-	$db->insert_query("settings", $pluginspack_settings_6);
+	$insert_settings = array();
+
+	$i = 100;
+	foreach($settings as $setting)
+	{
+		$insert['name'] = $db->escape_string($setting['name']);
+		$insert['title'] = $db->escape_string($setting['title']);
+		$insert['description'] = $db->escape_string($setting['description']);
+		$insert['optionscode'] = $db->escape_string($setting['optionscode']);
+		$insert['value'] = $db->escape_string($setting['value']);
+		$insert['disporder'] = $i;
+		$insert['gid'] = $gid;
+
+		$insert_settings[] = $insert;
+
+		$i++;
+	}
+
+	$db->insert_query_multiple('settings', $insert_settings);
 	
 	$insertArray = array(
 		0 => array(
@@ -242,7 +247,7 @@ $plugins->run_hooks("datahandler_subscribedthread_myalerts", $args);'
 	
 	$db->insert_query_multiple('alert_setting_values', $userSettings);
 	
-	// rebuild settings
+	// Rebuild ./inc/settings.php
 	rebuild_settings();
 }
 
@@ -263,10 +268,10 @@ function pluginspack_uninstall()
 	}
 	$PL->edit_core('pluginspack', 'inc/datahandlers/post.php', array(), true);
 	
-	// delete ACP settings
+	// Delete ACP settings
 	$db->write_query("DELETE FROM " . TABLE_PREFIX . "settings WHERE name IN('myalerts_alert_mysupport','myalerts_alert_myncomments','myalerts_alert_subscribedthread','myalerts_alert_subscribedforum', 'myalerts_alert_announcement_add', 'myalerts_alert_announcement_edit')");
 	
-	// delete existing values
+	// Delete existing values
 	$query = $db->simple_select("alert_settings", "id", "code IN ('mysupport', 'myncomments', 'subscribedthread', 'subscribedforum', 'announcement_add', 'announcement_edit')");
 	while ($setting = $db->fetch_array($query)) {
 		$settings[] = $setting['id'];
@@ -277,21 +282,24 @@ function pluginspack_uninstall()
 	if(!empty($settings)) {
 		$db->delete_query("alert_setting_values", "setting_id IN ({$settings})");
 	}
-	// delete UCP settings
+	// Delete UCP settings
 	$db->delete_query("alert_settings", "code IN ('mysupport', 'myncomments', 'subscribedthread', 'subscribedforum', 'announcement_add', 'announcement_edit')");
 	
+
 	$info = pluginspack_info();
-	// delete the plugin from cache
+
+	// Delete the plugin from cache
 	$shadePlugins = $cache->read('shade_plugins');
 	unset($shadePlugins[$info['name']]);
 	$cache->update('shade_plugins', $shadePlugins);
-	// rebuild settings
+
+	// Rebuild ./inc/settings.php
 	rebuild_settings();
 }
 
-// load our custom lang file into MyAlerts
+// Load our custom lang file into MyAlerts
 $plugins->add_hook('myalerts_load_lang', 'pluginspack_load_lang');
-//And for our Settingspage
+// And for our Settingspage
 $plugins->add_hook('admin_config_settings_begin', 'pluginspack_load_lang');
 function pluginspack_load_lang()
 {
@@ -302,7 +310,7 @@ function pluginspack_load_lang()
 	}
 }
 
-//Let's include our ACP Page
+// Let's include our ACP Page
 function pluginspack_admin_config_menu($sub_menu)
 {
 	global $lang;
@@ -335,7 +343,7 @@ function pluginspack_admin_config_permissions($admin_permissions)
 	return $admin_permissions;
 }
 
-// generate text and stuff like that - fixes #1
+// Generate text and stuff like that - fixes #1
 $plugins->add_hook('myalerts_alerts_output_start', 'pluginspack_parseAlerts');
 function pluginspack_parseAlerts(&$alert)
 {
@@ -353,21 +361,21 @@ function pluginspack_parseAlerts(&$alert)
 		if ($status == 0) {
 			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_notsolved, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
 		}
-		// solved
+		// Solved
 		elseif ($status == 1) {
 			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_solved, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
 		}
-		// solved and closed
+		// Solved and Closed
 			elseif ($status == 3) {
 			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_solvedandclosed, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
 		}
-		// technical
+		// Technical
 		if ($status == 2 AND !($mybb->settings['mysupporthidetechnical'] == 1 AND !mysupport_usergroup("canmarktechnical"))) {
 			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_technical, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
 		} elseif ($status == 2 AND $mybb->settings['mysupporthidetechnical'] == 1) {
 			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_notsolved, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
 		}
-		// not technical
+		// Not Technical
 		if ($status == 4 AND !($mybb->settings['mysupporthidetechnical'] == 1 AND !mysupport_usergroup("canmarktechnical"))) {
 			$alert['message'] = $lang->sprintf($lang->pluginspack_mysupport_nottechnical, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
 		} elseif ($status == 4 AND $mybb->settings['mysupporthidetechnical'] == 1) {
@@ -386,7 +394,7 @@ function pluginspack_parseAlerts(&$alert)
 		}
 		$alert['rowType'] = 'myncommentsAlert';
 	}
-	// Subscribed thread
+	// Subscribed Thread
 	elseif ($alert['alert_type'] == 'subscribedthread' AND $mybb->user['myalerts_settings']['subscribedthread']) {
 		$alert['threadLink'] = $mybb->settings['bburl'] . '/' . get_thread_link($alert['content']['tid']);
 		$alert['message'] = $lang->sprintf($lang->pluginspack_subscribedthread_newpost, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['subject']);
@@ -399,7 +407,7 @@ function pluginspack_parseAlerts(&$alert)
 		$alert['message'] = $lang->sprintf($lang->pluginspack_subscribedforum_newthread, $alert['user'], $alert['threadLink'], $alert['dateline'], $alert['content']['forumname'], $alert['forumLink']);
 		$alert['rowType'] = 'subscribedforumAlert';
 	}
-	//Announcement
+	// Announcement
 	elseif (($alert['alert_type'] == 'announcement_add' OR $alert['alert_type'] == 'announcement_edit') AND ($mybb->user['myalerts_settings']['announcement_add'] OR $mybb->user['myalerts_settings']['announcemenet_edit'])) {
 		$tempLang = "announcement_{$alert['content']['type']}";
 		$global = $removeable = "";
@@ -427,7 +435,7 @@ function pluginspack_addAlert_MySupport(&$args)
 	$multiple = $args['multiple'];
 	$status = $args['status'];
 	
-	// multiple threads - marking from forumdisplay
+	// Multiple threads - marking from forumdisplay
 	if ($multiple) {
 		foreach ($thread_info as $thread) {
 			$thread = get_thread($thread);
@@ -440,7 +448,7 @@ function pluginspack_addAlert_MySupport(&$args)
 			}
 		}
 	}
-	// single thread, marking from showthread
+	// Single thread, marking from showthread
 	else {
 		if ($thread_info['uid'] != $mybb->user['uid']) {
 			$Alerts->addAlert((int) $thread_info['uid'], 'mysupport', (int) $thread_info['tid'], (int) $mybb->user['uid'], array(
@@ -463,13 +471,13 @@ function pluginspack_addAlert_MYNComments(&$args)
 	$uid = $args[0]->data['uid'];
 	$newconv = $args[0]->data['conv'];
 	
-	// new conversation, we don't need to check UID since you cannot post directly on your personal wall
+	// New conversation, we don't need to check UID since you cannot post directly on your personal wall
 	if ($newconv == 0) {
 		$Alerts->addAlert((int) $uid, 'myncomments', 0, (int) $mybb->user['uid'], array(
 			'newconv' => true
 		));
 	}
-	// new comment in reply to an existing conversation, we need to check UIDs here
+	// New comment in reply to an existing conversation, we need to check UIDs here
 	else {
 		$conversation = $db->fetch_array($db->simple_select("myn_comments", "aid", "cid = {$newconv}"));
 		if ($mybb->user['uid'] != $conversation['aid']) {
@@ -495,16 +503,16 @@ function pluginspack_addAlert_Announcement()
 
 	$type = ""; $info = array();
 	
-	//What type do we have?
+	// What type do we have?
 	if ($mybb->input['action'] == "do_add" AND $mybb->settings['myalerts_alert_announcement_add']) {
-		//Added a new one
+		// Added a new one
 		global $insert;
 		$info = $insert;
 		$info['Groups'] = $mybb->input['group'];
 		$info['Langs'] = $mybb->input['langs'];
 		$set = $type = "add";
 	} elseif ($mybb->input['action'] == "enable" AND $mybb->settings['myalerts_alert_announcement_add']) {
-		//Enabled an existing one
+		// Enabled an existing one
 		global $aid, $enabled;
 		$query = $db->simple_select("announcement", "Groups, Langs, Global, removable, Announcement", "ID='{$aid}'");
 		$info = $db->fetch_array($query);
@@ -514,7 +522,7 @@ function pluginspack_addAlert_Announcement()
 		$type = "enabled";
 		$set = "add";
 	} elseif ($mybb->input['action'] == "do_edit" AND $mybb->settings['myalerts_alert_announcement_edit']) {
-		//Edited one
+		// Edited one
 		global $update;
 		$info = $update;
 		$info['Groups'] = $mybb->input['group'];
@@ -523,7 +531,7 @@ function pluginspack_addAlert_Announcement()
 	}
 
 	if ($info['Enabled']) {
-		//Add our Alert
+		// Add our Alert
 		$where = array();
 		if(is_array($info['Groups'])) {
 			$groups = implode("','", $info['Groups']);
@@ -540,8 +548,8 @@ function pluginspack_addAlert_Announcement()
 		while ($uid = $db->fetch_field($query, "uid"))
 			$uids[] = (int) $uid;
 				
-		//We're in ACP so we need a new Alerts class
-		//but first check if another Plugin hasn't loaded it already...
+		// We're in ACP so we need a new Alerts class,
+		// but first check if another Plugin hasn't loaded it already...
 		if(!$Alerts) {
 			require_once MYALERTS_PLUGIN_PATH.'Alerts.class.php';
 			$Alerts = new Alerts($mybb, $db);
@@ -571,7 +579,7 @@ function pluginspack_addAlert_subscribedthread(&$args)
 	$subject = $args['subject'];
 	$tid = $args['post']['tid'];
 	
-	// no conditions/special things to do??? thanks to the custom hook we have added, this is as simple as alerting directly the user
+	// No conditions/special things to do??? thanks to the custom hook we have added, this is as simple as alerting directly the user
 	$Alerts->addAlert((int) $uid, 'subscribedthread', (int) $tid, (int) $mybb->user['uid'], array(
 		'subject' => $subject,
 		'tid' => $tid
@@ -586,7 +594,7 @@ function pluginspack_addAlert_subscribedforum(&$args)
 	$fid = $args['forum']['fid'];
 	$tid = $args['this']->tid;
 	
-	// same as above
+	// Same as above
 	$Alerts->addAlert((int) $uid, 'subscribedforum', (int) $tid, (int) $mybb->user['uid'], array(
 		'forumname' => $forumname,
 		'tid' => $tid,
@@ -596,7 +604,7 @@ function pluginspack_addAlert_subscribedforum(&$args)
 
 
 
-//Replace functions
+// Replace functions
 function fix_mysupport() {
 	global $supported_plugins, $PL;
 	return $PL->edit_core('pluginspack', $supported_plugins['mysupport']['file'], array(
@@ -611,7 +619,7 @@ $plugins->run_hooks("mysupport_myalerts", $args);'
 
 function fix_myn_core() {
 	global $supported_plugins, $PL;
-	// disable default alert for MyNetwork Profile Comments
+	// Disable default alert for MyNetwork Profile Comments
 	return $PL->edit_core('pluginspack', $supported_plugins['myn_core']['file'], array(
 		array(
 			'search' => '$this->comment_alert();',
@@ -623,17 +631,17 @@ function fix_myn_core() {
 function fix_announcement() {
 	global $supported_plugins, $PL;
 	return $PL->edit_core('pluginspack', $supported_plugins['announcement']['file'], array(
-		//Run our Hook on adding
+		// Run our Hook on adding
 		array(
 			'search' => '$db->insert_query("announcement", $insert);',
 			'after' => '$plugins->run_hooks("announcement_fire");'
 		),
-		//On enabling
+		// On enabling
 		array(
 			'search' => '$db->update_query("announcement", array("Enabled"=>$enabled), "ID=\'{$aid}\'");',
 			'after' => '\n$plugins->run_hooks("announcement_fire");'
 		),
-		//And on editing
+		// And on editing
 		array(
 			'search' => '$db->update_query("announcement", $update, "ID=\'{$aid}\'");',
 			'after' => '$plugins->run_hooks("announcement_fire");'

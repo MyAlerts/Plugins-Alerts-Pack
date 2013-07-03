@@ -1,4 +1,16 @@
 <?php
+/**
+ * Plugins Alerts Pack
+ * 
+ * Provides integration between the most famous plugins and MyAlerts.
+ *
+ * @package Plugins Alerts Pack
+ * @author  Shade <legend_k@live.it>
+ * @license http://opensource.org/licenses/mit-license.php MIT license (same as MyAlerts)
+ * @version 1.0
+ */
+
+
 $l['pluginspack'] = "Plugins Alerts Pack";
 $l['pluginspack_permission'] = "Can manage Plugins Alerts Pack?";
 
