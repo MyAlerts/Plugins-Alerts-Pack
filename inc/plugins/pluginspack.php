@@ -274,7 +274,9 @@ function pluginspack_uninstall()
 	$settings = implode(",", $settings);
 	
 	// truly delete them
-	$db->delete_query("alert_setting_values", "setting_id IN ({$settings})");
+	if(!empty($settings)) {
+		$db->delete_query("alert_setting_values", "setting_id IN ({$settings})");
+	}
 	// delete UCP settings
 	$db->delete_query("alert_settings", "code IN ('mysupport', 'myncomments', 'subscribedthread', 'subscribedforum', 'announcement_add', 'announcement_edit')");
 	
